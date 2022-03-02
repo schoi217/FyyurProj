@@ -30,9 +30,9 @@ migrate = Migrate(app, db)
 #----------------------------------------------------------------------------#
 
 class Venue(db.Model):
-    __tablename__ = 'Venue'
+    __tablename__ = 'venue'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String)
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
@@ -43,25 +43,36 @@ class Venue(db.Model):
     website = db.Column(db.String(500))
     seeking_talent = db.Column(db.Boolean())
     seeking_description = db.Column(db.String(250))
-    genres = db.Column(db.ARRAY(db.String(100)))
-    
+    genres = db.Column(db.ARRAY(db.String(120)))
+    shows = db.relationship('Show', cascade="all, delete",
+                            passive_deletes=True, lazy=True)
 
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    # TODO: implement any missing fields, as a database migration using Flask-Migrate (done ?)
 
 class Artist(db.Model):
-    __tablename__ = 'Artist'
+    __tablename__ = 'artist'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String)
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
+    genres = db.Column(db.ARRAY(db.String(120)))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    shows = db.relationship('Show', cascade="all, delete", passive_deletes=True, lazy=True)
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+class Show(db.Model):
+    __tablename__ = 'show'
+
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    start_time = db.Column(db.DateTime(), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('venue.id', ondelete="CASCADE"), nullable=False)
+    artist_id = db.Column(db.Integer, db.ForeignKey('artist.id', ondelete="CASCADE"), nullable=False)
+
+
+    # TODO: implement any missing fields, as a database migration using Flask-Migrate (done)
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
@@ -93,30 +104,60 @@ def index():
 
 @app.route('/venues')
 def venues():
-  # TODO: replace with real venues data.
-  #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]
-  return render_template('pages/venues.html', areas=data);
+
+  #num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
+
+    #Query all the venues
+    venues = Venue.query.all()
+
+    #create a list for the data and a set for cities and states
+    datas = list()
+    cities_states = set()
+
+    #iterate through the venue, create a set of city/state so no duplicates
+    #add to cities_states
+    for venue in venues:
+        city = venue.city
+        state = venue.state
+        city_state = (city, state)
+        cities_states.add(city_state)
+
+    #make it iterable
+    cities_states = list(cities_states)
+    #go through all locations and create list of dictionary
+    for location in cities_states:
+        venue_info = []
+        for venue in venues:
+            if (venue.city == location[0]) & (venue.state == location[1]):
+                venue_dict = {'id': venue.id, 'name': venue.name}
+                venue_info.append(venue_dict)
+
+        #add the new city, state, and list of venues to venues key
+        datas.append({'city': location[0], 'state': location[1],
+                      'venues': venue_info})
+
+    data=[{
+        "city": "San Francisco",
+        "state": "CA",
+        "venues": [{
+            "id": 1,
+            "name": "The Musical Hop",
+            "num_upcoming_shows": 0,
+            }, {
+            "id": 3,
+            "name": "Park Square Live Music & Coffee",
+            "num_upcoming_shows": 1,
+            }]
+        }, {
+        "city": "New York",
+        "state": "NY",
+        "venues": [{
+            "id": 2,
+            "name": "The Dueling Pianos Bar",
+            "num_upcoming_shows": 0,
+            }]
+        }]
+    return render_template('pages/venues.html', areas=datas);
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
@@ -478,21 +519,21 @@ def shows():
 
 @app.route('/shows/create')
 def create_shows():
-  # renders form. do not touch.
-  form = ShowForm()
-  return render_template('forms/new_show.html', form=form)
+    # renders form. do not touch.
+    form = ShowForm()
+    return render_template('forms/new_show.html', form=form)
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
-  # called to create new shows in the db, upon submitting new show listing form
-  # TODO: insert form data as a new Show record in the db, instead
+    # called to create new shows in the db, upon submitting new show listing form
+    # TODO: insert form data as a new Show record in the db, instead
 
-  # on successful db insert, flash success
-  flash('Show was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Show could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
+    # on successful db insert, flash success
+    flash('Show was successfully listed!')
+    # TODO: on unsuccessful db insert, flash an error instead.
+    # e.g., flash('An error occurred. Show could not be listed.')
+    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+    return render_template('pages/home.html')
 
 @app.errorhandler(404)
 def not_found_error(error):
