@@ -13,6 +13,7 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+from datetime import datetime
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -105,8 +106,6 @@ def index():
 @app.route('/venues')
 def venues():
 
-  #num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
-
     #Query all the venues
     venues = Venue.query.all()
 
@@ -161,18 +160,22 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-  # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-  # seach for Hop should return "The Musical Hop".
-  # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
-  response={
-    "count": 1,
-    "data": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }
-  return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+    # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
+    # seach for Hop should return "The Musical Hop".
+    # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
+    search_term = request.form.get('search_term', '')
+
+    venues = Venue.query.filter(Venue.name.ilike('%' + search_term + '%')).all()
+    data = []
+    for venue in venues:
+        id = venue.id
+        name = venue.name
+        data.append({'id': id, 'name': name})
+    count = len(venues)
+    responses = {'data':data, 'count': count}
+
+
+    return render_template('pages/search_venues.html', results=responses, search_term=request.form.get('search_term', ''))
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
@@ -292,6 +295,8 @@ def delete_venue(venue_id):
 @app.route('/artists')
 def artists():
   # TODO: replace with real data returned from querying the database
+
+
   data=[{
     "id": 4,
     "name": "Guns N Petals",
