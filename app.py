@@ -1,7 +1,7 @@
 #----------------------------------------------------------------------------#
 # Imports
 #----------------------------------------------------------------------------#
-
+import sys
 import json
 import dateutil.parser
 import babel
@@ -223,7 +223,7 @@ def show_venue(venue_id):
         'website': venue.website,
         'seeking_talent': venue.seeking_talent,
         'seeking_description': venue.seeking_description,
-        'genres': list(venue.genres),
+        'genres': venue.genres,
         'past_shows_count': venue.past_shows_count,
         'upcoming_shows_count': venue.upcoming_shows_count
         }
@@ -333,8 +333,6 @@ def show_venue(venue_id):
       "upcoming_shows_count": 1,
     }
 
-
-    data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
     return render_template('pages/show_venue.html', venue=datas)
 
 #  Create Venue
@@ -342,20 +340,44 @@ def show_venue(venue_id):
 
 @app.route('/venues/create', methods=['GET'])
 def create_venue_form():
-  form = VenueForm()
-  return render_template('forms/new_venue.html', form=form)
+    form = VenueForm()
+    return render_template('forms/new_venue.html', form=form)
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  # TODO: insert form data as a new Venue record in the db, instead
-  # TODO: modify data to be the data object returned from db insertion
+    # TODO: insert form data as a new Venue record in the db, instead
+    # TODO: modify data to be the data object returned from db insertion
+    form = VenueForm(request.form)
+    new_venue = Venue(
+        name=form.name.data,
+        phone=form.phone.data,
+        state=form.state.data,
+        address=form.address.data,
+        image_link=form.image_link.data,
+        facebook_link=form.facebook_link.data,
+        city=form.city.data,
+        website=form.website_link.data,
+        genres=form.genres.data,
+        seeking_talent=form.seeking_talent.data,
+        seeking_description=form.seeking_description.data)
+    try:
+        db.session.add(new_venue)
+        db.session.commit()
+        flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    except:
+        db.session.rollback()
+        flash('Venue ' + request.form['name'] + " couldn't successfully listed!")
+        print(sys.exc_info())
+    finally:
+        db.session.close()
 
-  # on successful db insert, flash success
-  flash('Venue ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
+    # on successful db insert, flash success
+
+
+    # TODO: on unsuccessful db insert, flash an error instead.
+    # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
+    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+    return render_template('pages/home.html')
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
