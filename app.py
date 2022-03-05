@@ -370,8 +370,37 @@ def show_artist(artist_id):
         'state': artist.state,
         'phone': artist.phone,
         'website': artist.website,
-
+        'facebook_link': artist.facebook_link,
+        'seeking_venue': artist.seeking_venue,
+        'seeking_description': artist.seeking_description,
+        'image_link': artist.image_link,
+        'past_shows_count': artist.past_shows_count,
+        'upcoming_shows_count': artist.upcoming_shows_count
         }
+
+        #Go through all past shows and add in serialized venue info
+        past_shows = []
+        for past_show in artist.past_shows:
+            venue = Venue.query.get(past_show.venue_id)
+            past_shows.append({
+                'venue_id': past_show.venue_id,
+                'start_time': past_show.start_time,
+                'venue_name': venue.name,
+                'venue_image_link': venue.image_link
+            })
+        data['past_shows'] = past_shows
+
+        #Go through all upcoming shows and add in serialized venue info
+        upcoming_shows = []
+        for upcoming_show in artist.upcoming_shows:
+            venue = Venue.query.get(upcoming_show.venue_id)
+            upcoming_shows.append({
+                'venue_id': upcoming_show.venue_id,
+                'start_time': upcoming_show.start_time,
+                'venue_name': venue.name,
+                'venue_image_link': venue.image_link
+            })
+        data['upcoming_shows'] = upcoming_shows
 
 
 
@@ -446,7 +475,7 @@ def show_artist(artist_id):
       "past_shows_count": 0,
       "upcoming_shows_count": 3,
     }
-    data = list(filter(lambda d: d['id'] == artist_id, [data1, data2, data3]))[0]
+
     return render_template('pages/show_artist.html', artist=data)
 
 
