@@ -302,6 +302,7 @@ def delete_venue(venue_id):
         venue = Venue.query.filter(Venue.id == venue_id).first()
         db.session.delete(venue)
         db.session.commit()
+        flash('Venue ' + venue.name + ' was successfully deleted!')
     except:
         db.session.rollback()
     finally:
@@ -353,11 +354,23 @@ def search_artists():
             results=response, search_term=request.form.get('search_term', ''))
 
 
+@app.route('/artists/<artist_id>/delete', methods=['GET'])
+def delete_artist(artist_id):
+    try:
+        artist = Artist.query.filter(Artist.id == artist_id).first()
+        db.session.delete(artist)
+        db.session.commit()
+        flash('Artist ' + artist.name + ' was successfully deleted!')
+    except:
+        db.session.rollback()
+    finally:
+        db.session.close()
+
+    return redirect(url_for('index'))
+
+
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
-
-    # shows the artist page with the given artist_id
-    # TODO: replace with real artist data from the artist table, using artist_id
 
     #query the artist with the appropriate id
     artist = Artist.query.filter(Artist.id == artist_id).first()
@@ -491,17 +504,13 @@ def create_artist_submission():
     try:
         db.session.add(new_artist)
         db.session.commit()
-        flash('Venue ' + request.form['name'] + ' was successfully listed!')
+        flash('Artist ' + request.form['name'] + ' was successfully listed!')
     except:
         db.session.rollback()
-        flash('Venue ' + request.form['name'] + " couldn't successfully listed!")
+        flash('Artist ' + request.form['name'] + " wasn't successfully listed!")
         print(sys.exc_info())
     finally:
         db.session.close()
-
-    # on successful db insert, flash success
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
 
     return render_template('pages/home.html')
 
@@ -554,10 +563,6 @@ def create_show_submission():
         flash("Show wasn't successfully listed!")
     finally:
         db.session.close()
-    # on successful db insert, flash success
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Show could not be listed.')
-    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
     return render_template('pages/home.html')
 
 @app.errorhandler(404)
