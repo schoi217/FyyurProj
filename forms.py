@@ -84,8 +84,7 @@ class VenueForm(Form):
     )
     phone = StringField(
         'phone', validators=[Regexp('^\d{3}\-\d{3}-\d{4}$',
-                             message='Phone number is in the wrong format!' +
-                             ' We need the format xxx-xxx-xxxx please.')]
+                             message='Phone number is in the wrong format!')]
     )
     image_link = StringField(
         'image_link'
